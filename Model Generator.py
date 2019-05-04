@@ -5,11 +5,15 @@ from PyQt5.QtCore import QDir, QCoreApplication, Qt, QMimeData, QSize
 from MainForm import Ui_MainWindow
 import sys
 
+
 class NewListWedgit(QListWidget):
 	pass
-	# def dropEvent(self, e):
-	# 	e.accept()
-	# 	print(e.mimeData().text())
+	def dropEvent(self, event):
+		print(event.mimeData().hasFormat('application/x-qabstractitemmodeldatalist'))
+		# if event.mimeData().hasFormat("text/plain"):
+		# 	temp = QListWidgetItem()
+		# e.accept()
+		# print(e.mimeData().text())
 
 class MainForm(Ui_MainWindow):
 	TabList = []
