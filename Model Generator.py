@@ -1,121 +1,30 @@
-from PyQt5.QtGui import QPixmap, QDrag
-from PyQt5.QtWidgets import QApplication, QMainWindow, QFileSystemModel, QMessageBox, QWidget, QLabel, QTabWidget, QListView
+from PyQt5.QtGui import QPixmap, QDrag, QStandardItemModel, QStandardItem, QFont, QIcon
+from PyQt5.QtWidgets import QApplication, QMainWindow, QFileSystemModel, QMessageBox, QWidget, QLabel, \
+	QTabWidget, QListView, QListWidget, QListWidgetItem, QAbstractItemView, QTableWidget, QHeaderView
 from PyQt5.QtCore import QDir, QCoreApplication, Qt, QMimeData, QSize
 from MainForm import Ui_MainWindow
 import sys
 
-
-class DropArea(QTabWidget):
-	# def __init__(self):
-	# 	super(self).__init__()
-
-	def mouseMoveEvent(self, e):
-		if e.buttons() != Qt.LeftButton:
-			return
-
-		mimeData = QMimeData()
-
-		drag = QDrag(self)
-		drag.setMimeData(mimeData)
-		drag.setHotSpot(e.pos() - self.rect().topLeft())
-		drag.exec_(Qt.CopyAction)
-
-
-	# def mousePressEvent(self, e):
-	#
-	# 	super().mousePressEvent(e)
-	#
-	# 	if e.button() == Qt.LeftButton:
-	# 		print('press')
-
-
-	def dragEnterEvent(self, e):
-		e.accept()
-
-
-	def dropEvent(self, e):
-		# position = e.pos()
-		# self.move(position)
-		# We specify the type of the drop action with setDropAction().
-		# In our case it is a move action.
-		e.setDropAction(Qt.CopyAction)
-		e.accept()
-
-
-class DraggableLabel(QLabel):
-	def __init__(self, title):
-		super().__init__(title)
-
-	def mouseMoveEvent(self, e):
-		if e.buttons() != Qt.LeftButton:
-			return
-
-		mimeData = QMimeData()
-
-		drag = QDrag(self)
-		drag.setMimeData(mimeData)
-		drag.setHotSpot(e.pos() - self.rect().topLeft())
-		drag.exec_(Qt.CopyAction)
-
-
-	# def mousePressEvent(self, e):
-	#
-	# 	super().mousePressEvent(e)
-	#
-	# 	if e.button() == Qt.LeftButton:
-	# 		print('press')
-
-
-	def dragEnterEvent(self, e):
-		e.accept()
-
-
-	def dropEvent(self, e):
-		position = e.pos()
-		# self.move(position)
-		# We specify the type of the drop action with setDropAction().
-		# In our case it is a move action.
-		e.setDropAction(Qt.CopyAction)
-		e.accept()
-
+class NewListWedgit(QListWidget):
+	pass
+	# def dropEvent(self, e):
+	# 	e.accept()
+	# 	print(e.mimeData().text())
 
 class MainForm(Ui_MainWindow):
 	TabList = []
 	TabListO = []
-	ScrollArea = []
+	ListWidgetO = []
+	ItemFont = QFont('arial')
+	ItemFont.setPointSize(20)
+
 
 	# Form init
 	def __init__(self, MainWindow):
 		super(MainForm, self).setupUi(MainWindow)
-
-		# self.tabWidget.mouseMoveEvent = DropArea.mouseMoveEvent
-		# self.tabWidget.dragEnterEvent = DropArea.dragEnterEvent
-		# self.tabWidget.dropEvent = DropArea.dropEvent
-		# self.tabWidget = DropArea(self.tabWidget)
-
 		self.SetTreeWedgit()
-		self.SetLayerBackground()
 		self.SetTabWidegt()
-
-		self.NNLayer1 = DraggableLabel(QLabel(self.scrollAreaWidgetContents_4))
-		self.NNLayer1.setMinimumSize(QSize(200, 50))
-		self.NNLayer1.setMaximumSize(QSize(200, 50))
-		self.NNLayer1.setAutoFillBackground(True)
-		self.NNLayer1.setAlignment(Qt.AlignCenter)
-		self.NNLayer1.setObjectName("NNLayer1")
-		self.verticalLayout_2.addWidget(self.NNLayer1)
-		self.NNLayer1.setAcceptDrops(True)
-		self.scrollAreaWidgetContents_4.setAcceptDrops(True)
-		self.scrollArea_2.setAcceptDrops(True)
-		self.groupBox_4.setAcceptDrops(True)
-		self.groupBox_3.setAcceptDrops(True)
-		self.centralWidget.setAcceptDrops(True)
-		self.tabWidget.setAcceptDrops(True)
-		self.NNLayer1.setPixmap(QPixmap('File/Image/Optimizer.jpg'))
-
-
-
-
+		self.SetListLayer()
 
 
 	# init
@@ -133,41 +42,16 @@ class MainForm(Ui_MainWindow):
 		self.treeView.hideColumn(3)
 		self.treeView.doubleClicked.connect(self.TreeViewDoubleClicked)
 
-
-	def SetLayerBackground(self):
-		# Layer Background
-		ImgCNN = QPixmap('File/Image/CNN.jpg')
-		if ImgCNN.isNull():
-			raise FileNotFoundError
-		ImgNN = QPixmap('File/Image/NN.jpg')
-		if ImgNN.isNull():
-			raise FileNotFoundError
-		ImgRNN = QPixmap('File/Image/RNN.jpg')
-		if ImgRNN.isNull():
-			raise FileNotFoundError
-		ImgLSTM = QPixmap('File/Image/LSTM.jpg')
-		if ImgLSTM.isNull():
-			raise FileNotFoundError
-		ImgInput = QPixmap('File/Image/Input.jpg')
-		if ImgInput.isNull():
-			raise FileNotFoundError
-		ImgOutput = QPixmap('File/Image/Output.jpg')
-		if ImgOutput.isNull():
-			raise FileNotFoundError
-		ImgOptimizer = QPixmap('File/Image/Optimizer.jpg')
-		if ImgOptimizer.isNull():
-			raise FileNotFoundError
-		ImgSoftmax = QPixmap('File/Image/Softmax.jpg')
-		if ImgSoftmax.isNull():
-			raise FileNotFoundError
-		self.InputLayer.setPixmap(ImgInput)
-		self.CNNLayer.setPixmap(ImgCNN)
-		self.NNLayer.setPixmap(ImgNN)
-		self.RNNLayer.setPixmap(ImgRNN)
-		self.LSTMLayer.setPixmap(ImgLSTM)
-		self.Optimizer.setPixmap(ImgOptimizer)
-		self.OutputLayer.setPixmap(ImgOutput)
-		self.SoftmaxLayer.setPixmap(ImgSoftmax)
+	def SetListLayer(self):
+		Layers = ['Input', 'CNN', 'LSTM', 'NN', 'RNN','Optimizer', 'Softmax', 'Output']
+		for layer in Layers:
+			temp = QListWidgetItem(layer)
+			# temp.setIcon(QIcon('File/Image/' + layer + '.jpg'))
+			temp.setFont(self.ItemFont)
+			temp.setTextAlignment(Qt.AlignHCenter)
+			self.LayerList.addItem(temp)
+		self.LayerList.setEditTriggers(QAbstractItemView.NoEditTriggers)
+		self.LayerList.setDragEnabled(True)
 
 	# tab double click binding
 	def tabWidgetDoubleClicked(self):
@@ -267,14 +151,46 @@ class MainForm(Ui_MainWindow):
 
 		# add scroll area to new tab
 		print(temp)
-		TempListView = QListView(temp)
+		TempListWidget = NewListWedgit(temp)
 		# TempScrollArea.setWidgetResizable(True)
-		TempListView.setMinimumSize(QSize(471, 633))
-		TempListView.setMaximumSize(QSize(471, 633))
+		TempListWidget.setMinimumSize(QSize(471, 633))
+		TempListWidget.setMaximumSize(QSize(471, 633))
 		# TempListView.setGeometry(0,0,200,100)
-		TempListView.setObjectName(ScrollAreaName)
-		TempListView.setAutoFillBackground(True)
-		self.TabListO.append(TempListView)
+		TempListWidget.setObjectName(ScrollAreaName)
+		TempListWidget.setAutoFillBackground(True)
+		self.ListWidgetO.append(TempListWidget)
+		TempListWidget.setAcceptDrops(True)
+		TempListWidget.setDragDropMode(2)
+		TempListWidget.setDefaultDropAction(0)
+		TempListWidget.itemDoubleClicked.connect(self.RemoveItem)
+
+
+
+
+		# TempListWidget.selectAll()
+
+	# 	TempListWidget.removeItemWidget()
+	#
+	def RemoveItem(self, item):
+		parent = item.listWidget()
+		parent.takeItem(parent.row(item))
+
+
+
+		# model = QStandardItemModel()
+		# for i in range(100):
+		# 	item = QStandardItem(str(i))
+		# 	item.setTextAlignment(Qt.AlignHCenter)
+		# 	model.appendRow(item)
+		# TempListView.setModel(model)
+		# TempListView.setFont(self.ItemFont)
+		# TempListView.setEditTriggers(QListView.NoEditTriggers)
+		# TempListView.dragEnterEvent = DropArea.dragEnterEvent
+		# TempListView.mouseMoveEvent = DropArea.mouseMoveEvent
+		# TempListView.dropEvent = DropArea.dropEvent
+		# TempListView.setAcceptDrops(True)
+		# TempListView.layout.setAlignment(Qt.AlignHCenter)
+		# TempListView.setAlignment(Qt.AlignHCenter)
 
 
 		# add list view to scroll area
