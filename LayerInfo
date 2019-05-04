@@ -1,0 +1,42 @@
+Input
+    array(1,1,) shape
+    array(1,1,) batch_shape
+    string      name
+    string      dtype
+    bool        sparse
+    tensor      tensor
+
+
+
+NN (Dense)
+    UInt Units
+    Sel  Activation
+    Bool use_bias
+    Sel  kernel_initializer
+    Sel  bias_initializer
+    Sel  kernel_regularizer
+    Sel  bias_initializer
+    Sel  activity_regularizer
+    Sel  kernel_constraint
+    Sel  bias_constraint
+
+Dropout
+    float(0-1) rate
+    array(a,a,a) noise_shape
+    int        seed
+
+Flatten
+    string data_format
+
+
+CNN
+
+RNN
+
+LSTM
+
+Optimizer
+
+Softmax
+
+Output
