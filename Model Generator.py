@@ -1,15 +1,26 @@
 from PyQt5.QtGui import QPixmap, QDrag, QStandardItemModel, QStandardItem, QFont, QIcon
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileSystemModel, QMessageBox, QWidget, QLabel, \
 	QTabWidget, QListView, QListWidget, QListWidgetItem, QAbstractItemView, QTableWidget, QHeaderView
-from PyQt5.QtCore import QDir, QCoreApplication, Qt, QMimeData, QSize
+from PyQt5.QtCore import QDir, QCoreApplication, Qt, QMimeData, QSize, QModelIndex
 from MainForm import Ui_MainWindow
 import sys
 
 
+
+
+
+
 class NewListWedgit(QListWidget):
+	item_list = []
 	pass
 	def dropEvent(self, event):
-		print(event.mimeData().hasFormat('application/x-qabstractitemmodeldatalist'))
+		if event.mimeData().hasFormat('application/x-qabstractitemmodeldatalist'):
+			data = event.mimeData()
+			source_item = QStandardItemModel()
+			source_item.dropMimeData(data, Qt.CopyAction, 0, 0, QModelIndex())
+			Instruction = source_item.item(0, 0).text()
+		else:
+			event.ignore()
 		# if event.mimeData().hasFormat("text/plain"):
 		# 	temp = QListWidgetItem()
 		# e.accept()

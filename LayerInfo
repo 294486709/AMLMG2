@@ -6,9 +6,53 @@ Input
     bool        sparse
     tensor      tensor
 
+Activations:
+['softmax', 'elu', 'selu', 'softplus', 'softsign', 'relu', 'tanh', 'hard_sigmoid', 'linear']
+    softmax
+    elu
+    selu
+    softplus
+    softsign
+    relu
+    tanh
+    hard_sigmoid
+    linear
+
+initializers:
+['truncatednormal', 'ones', 'initializer', 'randomnormal', 'randomuniform', 'variancescaling', 'orthogonal', 'identity', 'constant', 'zeros', 'glort_normal', 'florot_uniform', 'be_normal', 'lecun_normal', he_uniform', 'lecun_uniform']
+    truncatednormal
+    ones
+    initializer
+    randomnormal
+    randomuniform
+    variancescaling
+    orthogonal
+    identity
+    constant
+    zeros
+    glort_normal
+    florot_uniform
+    be_normal
+    lecun_normal
+    he_uniform
+    lecun_uniform
+
+regularizers:
+['l1', 'l2']
+    l1
+    l2
+
+constrains:
+['max_norm' ,'non_neg' ,'unit_norm', 'min_max_norm']
+    max_norm
+    non_neg
+    unit_norm
+    min_max_norm
+
 
 
 NN (Dense)
+    keras.layers.Dense(units, activation=None, use_bias=True, kernel_initializer='glorot_uniform', bias_initializer='zeros', kernel_regularizer=None, bias_regularizer=None, activity_regularizer=None, kernel_constraint=None, bias_constraint=None)
     UInt Units
     Sel  Activation
     Bool use_bias
@@ -21,15 +65,75 @@ NN (Dense)
     Sel  bias_constraint
 
 Dropout
+    keras.layers.Dropout(rate, noise_shape=None, seed=None)
     float(0-1) rate
     array(a,a,a) noise_shape
     int        seed
 
 Flatten
-    string data_format
+    keras.layers.Flatten(data_format=None)
+    None
 
+ActivityRegularization
+    keras.layers.ActivityRegularization(l1=0.0, l2=0.0)
+    Float l1
+    Float l2
+
+Masking
+    keras.layers.Masking(mask_value=0.0)
 
 CNN
+    Conv1D
+
+    keras.layers.Conv1D(filters, kernel_size, strides=1, padding='valid', data_format='channels_last', dilation_rate=1, activation=None, use_bias=True, kernel_initializer='glorot_uniform', bias_initializer='zeros', kernel_regularizer=None, bias_regularizer=None, activity_regularizer=None, kernel_constraint=None, bias_constraint=None)
+    int Filters
+    int kernel_size
+    array stride
+    String padding
+    int dilation_rate
+    Sel Activation
+    Bool use_bias
+    Sel  kernel_initializer
+    Sel  bias_initializer
+    Sel  kernel_regularizer
+    Sel  bias_initializer
+    Sel  activity_regularizer
+    Sel  kernel_constraint
+    Sel  bias_constraint
+
+    Conv2D
+
+    keras.layers.Conv2D(filters, kernel_size, strides=(1, 1), padding='valid', data_format=None, dilation_rate=(1, 1), activation=None, use_bias=True, kernel_initializer='glorot_uniform', bias_initializer='zeros', kernel_regularizer=None, bias_regularizer=None, activity_regularizer=None, kernel_constraint=None, bias_constraint=None)
+    int Filters
+    int kernel_size
+    array stride
+    String padding
+    int dilation_rate
+    Sel Activation
+    Bool use_bias
+    Sel  kernel_initializer
+    Sel  bias_initializer
+    Sel  kernel_regularizer
+    Sel  bias_initializer
+    Sel  activity_regularizer
+    Sel  kernel_constraint
+    Sel  bias_constraint
+
+
+Pooling
+
+    MaxPooling1D
+    keras.layers.MaxPooling1D(pool_size=2, strides=None, padding='valid')
+    integer pool_size
+    integer strides
+    sel padding
+
+    MaxPooling2D
+    keras.layers.MaxPooling2D(pool_size=(2, 2), strides=None, padding='valid', data_format=None)
+    array(1,1 pool_size
+    array(1,1 strides
+    sel padding
+    string DataFormat
 
 RNN
 
