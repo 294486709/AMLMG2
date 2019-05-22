@@ -1,30 +1,167 @@
-from PyQt5.QtGui import QPixmap, QDrag, QStandardItemModel, QStandardItem, QFont, QIcon
+from PyQt5.QtGui import QPixmap, QDrag, QStandardItemModel, QStandardItem, QFont, QIcon, QCursor
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileSystemModel, QMessageBox, QWidget, QLabel, \
-	QTabWidget, QListView, QListWidget, QListWidgetItem, QAbstractItemView, QTableWidget, QHeaderView
+	QTabWidget, QListView, QListWidget, QListWidgetItem, QAbstractItemView, QTableWidget,QTableWidgetItem, QHeaderView, QComboBox
 from PyQt5.QtCore import QDir, QCoreApplication, Qt, QMimeData, QSize, QModelIndex
 from MainForm import Ui_MainWindow
 import sys
+import Layers
+
+TempTarget = []
+
+class TrackableWidgetItem(QTableWidgetItem):
+	PropertyFont = QFont('arial')
+	PropertyFont.setPointSize(10)
+
+	def __init__(self, ins=None):
+		super(TrackableWidgetItem, self).__init__(ins)
+		self.setFont(self.PropertyFont)
+		self.setBackground(Qt.red)
+		# Item Changed
 
 
+class NewComboBox(QComboBox):
+	PropertyFont = QFont('arial')
+	PropertyFont.setPointSize(10)
+
+	def __init__(self, target, each, IndexCounter):
+		super(NewComboBox, self).__init__(parent=None)
+		targetValue = each + '_value'
+		self.addItems(target.attributes[each])
+		self.setCurrentIndex(target.attributes[targetValue])
+		self.setFont(self.PropertyFont)
+		self.data = target
+		self.targetValue = targetValue
+		self.currentIndexChanged.connect(self.Update)
+		self.IndexCounter = IndexCounter
+
+	def Update(self):
+		print('pressssss')
+		self.data.attributes[self.targetValue] = self.currentIndex()
+		global TempTarget
+		TempTarget = self.data
+		ChangeUpdate(ui.tabWidget.currentWidget().focusWidget())
 
 
-
-
-class NewListWedgit(QListWidget):
+class NewListWidget(QListWidget):
 	item_list = []
-	pass
+
+	Factory = Layers.CDFactory()
+	PropertyFont = QFont('arial')
+	PropertyFont.setPointSize(10)
+
+	def __init__(self, parent=None):
+		super(NewListWidget, self).__init__(parent)
+		self.setAcceptDrops(True)
+		self.setDragDropMode(2)
+		print(11)
+
+	def AddNewItem(self, Type):
+		index = len(self.item_list)
+		self.item_list.append(self.Factory.make(Type, index))
+
 	def dropEvent(self, event):
 		if event.mimeData().hasFormat('application/x-qabstractitemmodeldatalist'):
 			data = event.mimeData()
 			source_item = QStandardItemModel()
 			source_item.dropMimeData(data, Qt.CopyAction, 0, 0, QModelIndex())
 			Instruction = source_item.item(0, 0).text()
+			if event.source() != self:
+				event.setDropAction(Qt.CopyAction)
+				TempItem = QListWidgetItem()
+				TempItem.setText(Instruction)
+				TempItem.setTextAlignment(Qt.AlignCenter)
+				# TempItem.setData()
+				self.addItem(TempItem)
+				self.AddNewItem(Instruction)
+			else:
+				event.setDropAction(Qt.MoveAction)
+				PrevIndex = self.selectedIndexes()[0].row()
+				super(NewListWidget, self).dropEvent(event)
+				CurrentIndex = self.selectedIndexes()[0].row()
+				self.ItemSwap(PrevIndex, CurrentIndex)
+				self.UpdateIndex()
 		else:
 			event.ignore()
-		# if event.mimeData().hasFormat("text/plain"):
-		# 	temp = QListWidgetItem()
-		# e.accept()
-		# print(e.mimeData().text())
+
+	def ItemSwap(self, Prev, Current):
+		traget = self.item_list.pop(Prev)
+		self.item_list.insert(Current, traget)
+
+	def UpdateIndex(self):
+		for i in range(len(self.item_list)):
+			self.item_list[i].attributes['index'] = i
+
+	def mousePressEvent(self, QMouseEvent):
+		super().mousePressEvent(QMouseEvent)
+		print('pressed')
+		current = self.selectedIndexes()[0].row()
+		self.ManageProperty(current)
+
+	def ManageProperty(self, index):
+		ui.tableWidget.setRowCount(0)
+
+		ui.tableWidget.setFont(self.PropertyFont)
+		ui.tableWidget.horizontalHeader().setDefaultSectionSize(120)
+		ui.tableWidget.setColumnCount(2)
+		ui.tableWidget.setHorizontalHeaderLabels(['Name', 'Value'])
+		SkipList = ['type']
+		target = self.item_list[index]
+		RowCounter = 0
+		IndexCounter = 0
+		for each in target.attributes:
+			if each in SkipList or each[-6:] == '_value':
+				IndexCounter += 1
+				continue
+			if each == 'index':
+				target.attributes['index'] = self.currentIndex().row()
+				tempItem = QTableWidgetItem('index')
+				tempItem.setTextAlignment(Qt.AlignCenter)
+				tempItem.setFont(self.PropertyFont)
+				tempItem.setFlags(Qt.ItemIsEnabled)
+				tempItem.setBackground(Qt.gray)
+				ui.tableWidget.insertRow(RowCounter)
+				ui.tableWidget.setItem(RowCounter, 0 , tempItem)
+				tempItem = QTableWidgetItem(str(self.currentIndex().row() + 1))
+				tempItem.setTextAlignment(Qt.AlignCenter)
+				tempItem.setFont(self.PropertyFont)
+				tempItem.setFlags(Qt.ItemIsEnabled)
+				tempItem.setBackground(Qt.gray)
+				ui.tableWidget.setItem(RowCounter, 1 , tempItem)
+				RowCounter += 1
+				continue
+			if target.attributes[each] == 'NA':
+				continue
+			NameItem = QTableWidgetItem(each)
+			NameItem.setTextAlignment(Qt.AlignCenter)
+			NameItem.setFont(self.PropertyFont)
+			NameItem.setFlags(Qt.ItemIsEnabled)
+			NameItem.setBackground(Qt.gray)
+			ui.tableWidget.insertRow(RowCounter)
+			ui.tableWidget.setItem(RowCounter, 0, NameItem)
+			if type(target.attributes[each]) == type([]):
+				comboBox = NewComboBox(target, each, IndexCounter)
+				ui.tableWidget.setCellWidget(RowCounter, 1, comboBox)
+				# comboBox.currentIndexChanged.connect(lambda: self.ChangeUpdate(RowCounter, targetValue))
+			else:
+				changeablewidget = TrackableWidgetItem('')
+				ui.tableWidget.setItem(RowCounter, 1, changeablewidget)
+
+				pass
+			RowCounter += 1
+			IndexCounter += 1
+
+def ChangeUpdate(self):
+	print('changed')
+	global  TempTarget
+	Index = TempTarget.attributes['index']
+	self.item_list[Index] = TempTarget
+
+
+
+
+
+
+
 
 class MainForm(Ui_MainWindow):
 	TabList = []
@@ -42,10 +179,10 @@ class MainForm(Ui_MainWindow):
 		self.SetListLayer()
 
 
-	# init
+
+
 	def SetTreeWedgit(self):
-		# treeview init
-		Model = QFileSystemModel()
+		Model =  QFileSystemModel()
 		Model.setRootPath(QDir.currentPath())
 		self.treeView.setModel(Model)
 		self.treeView.setRootIndex(Model.index(QDir.currentPath()))
@@ -57,67 +194,8 @@ class MainForm(Ui_MainWindow):
 		self.treeView.hideColumn(3)
 		self.treeView.doubleClicked.connect(self.TreeViewDoubleClicked)
 
-	def SetListLayer(self):
-		Layers = ['Input', 'CNN', 'LSTM', 'NN', 'RNN','Optimizer', 'Softmax', 'Output']
-		for layer in Layers:
-			temp = QListWidgetItem(layer)
-			# temp.setIcon(QIcon('File/Image/' + layer + '.jpg'))
-			temp.setFont(self.ItemFont)
-			temp.setTextAlignment(Qt.AlignHCenter)
-			self.LayerList.addItem(temp)
-		self.LayerList.setEditTriggers(QAbstractItemView.NoEditTriggers)
-		self.LayerList.setDragEnabled(True)
 
-	# tab double click binding
-	def tabWidgetDoubleClicked(self):
-		CurrentIndex = self.tabWidget.currentIndex()
-		self.tabWidget.removeTab(CurrentIndex)
-		self.TabList.pop(CurrentIndex)
-		self.TabListO.pop(CurrentIndex)
-
-
-
-	# set tab widget
-	def SetTabWidegt(self):
-
-		self.tabWidget.removeTab(0)
-		self.tabWidget.tabBarDoubleClicked.connect(self.tabWidgetDoubleClicked)
-
-		# Ready Page
-		##################################
-		FileName = 'New Model'
-		temp = QWidget()
-		temp.setAcceptDrops(True)
-		self.tabWidget.addTab(temp, FileName)
-		self.TabList.append(FileName)
-		self.TabListO.append(temp)
-		# add widget
-		ScrollAreaName = FileName + '_SA'
-		ListViewName = FileName + '_LV'
-		Index = self.TabList.index(FileName)
-		# target item
-		self.tabWidget.widget(Index)
-
-		# add scroll area to new tab
-		print(temp)
-		TempScrollArea = QLabel(temp)
-		# TempScrollArea.setWidgetResizable(True)
-		TempScrollArea.setMinimumSize(QSize(200, 50))
-		TempScrollArea.setMaximumSize(QSize(200, 50))
-		TempScrollArea.setGeometry(150,300,0,0)
-		TempScrollArea.setAutoFillBackground(True)
-		TempScrollArea.setAlignment(Qt.AlignCenter)
-		TempScrollArea.setObjectName(ScrollAreaName)
-		TempScrollArea.setAutoFillBackground(True)
-		TempScrollArea.setText('Ready')
-		####################################
-
-
-
-
-
-
-	# get the full path of the double clicked item
+# get the full path of the double clicked item
 	def TreeViewDoubleClicked(self):
 		item = self.treeView.selectedIndexes()
 		if item:
@@ -133,27 +211,29 @@ class MainForm(Ui_MainWindow):
 			BasePath += element
 		_translate = QCoreApplication.translate
 		self.AddTab(BasePath, TreeList[len(TreeList)-1])
-		self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab3), _translate("MainWindow", TreeList[len(TreeList)-1]))
+		self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabWidget), _translate("MainWindow", TreeList[len(TreeList)-1]))
 
-	# check extension
-	def CheckType(self, FileName):
-		return FileName[-3:] == '.py'
+	def tabWidgetDoubleClicked(self):
+		CurrentIndex = self.tabWidget.currentIndex()
+		self.tabWidget.removeTab(CurrentIndex)
+		self.TabList.pop(CurrentIndex)
+		self.TabListO.pop(CurrentIndex)
 
-	# add tab
-	def AddTab(self, BasePath, FileName):
-		# if name existed in Tablist skip
-		if not self.CheckType(FileName):
-			QMessageBox.warning(self.CNNLayer, "Warning", "Cannot open File:\n Wrong extension")
+
+# check input file type
+	def AddTab(self, FilePath, FileName):
+		if FileName[-3:] != '.py':
+			QMessageBox.warning(self.treeView, 'Warning', 'Cannot open file:\n Wrong extension')
 		elif FileName in self.TabList:
-			QMessageBox.warning(self.CNNLayer, "Warning", "Cannot open File:\n Instance existed")
+			QMessageBox.warning(self.treeView, 'Warning', 'Cannot open file:\n Instance existed')
 		else:
-			self.LoadFile(BasePath, FileName)
+			self.LoadFile(FilePath, FileName)
 
-	# load file
+# load new tab
 	def LoadFile(self, FilePath, FileName):
-		# add new tab
+
 		temp = QWidget()
-		temp.setAcceptDrops(True)
+		temp.setAcceptDrops(False)
 		self.tabWidget.addTab(temp, FileName)
 		self.TabList.append(FileName)
 		self.TabListO.append(temp)
@@ -166,10 +246,10 @@ class MainForm(Ui_MainWindow):
 
 		# add scroll area to new tab
 		print(temp)
-		TempListWidget = NewListWedgit(temp)
+		TempListWidget = NewListWidget(temp)
 		# TempScrollArea.setWidgetResizable(True)
-		TempListWidget.setMinimumSize(QSize(471, 633))
-		TempListWidget.setMaximumSize(QSize(471, 633))
+		TempListWidget.setMinimumSize(QSize(481, 654))
+		TempListWidget.setMaximumSize(QSize(481, 654))
 		# TempListView.setGeometry(0,0,200,100)
 		TempListWidget.setObjectName(ScrollAreaName)
 		TempListWidget.setAutoFillBackground(True)
@@ -178,42 +258,91 @@ class MainForm(Ui_MainWindow):
 		TempListWidget.setDragDropMode(2)
 		TempListWidget.setDefaultDropAction(0)
 		TempListWidget.itemDoubleClicked.connect(self.RemoveItem)
+		TempListWidget.setFont(self.ItemFont)
+		TempListWidget.setItemAlignment(Qt.AlignHCenter)
+		print(TempListWidget.acceptDrops())
 
-
-
-
-		# TempListWidget.selectAll()
-
-	# 	TempListWidget.removeItemWidget()
-	#
 	def RemoveItem(self, item):
-		parent = item.listWidget()
-		parent.takeItem(parent.row(item))
+		reply = QMessageBox.question(self.treeView, "Confirmation", "Do you really want to delete this layer?", QMessageBox.Yes | QMessageBox.No)
+		if reply == 16384:
+			parent = item.listWidget()
+			parent.takeItem(parent.row(item))
 
+	def SetTabWidegt(self):
+		self.tabWidget.tabBarDoubleClicked.connect(self.tabWidgetDoubleClicked)
 
+		# # Ready Page
+		# ##################################
+		# FileName = 'New Model'
+		# temp = QWidget()
+		# temp.setAcceptDrops(True)
+		# self.tabWidget.addTab(temp, FileName)
+		# self.TabList.append(FileName)
+		# self.TabListO.append(temp)
+		# # add widget
+		# ScrollAreaName = FileName + '_SA'
+		# ListViewName = FileName + '_LV'
+		# Index = self.TabList.index(FileName)
+		# # target item
+		# self.tabWidget.widget(Index)
+		#
+		# # add scroll area to new tab
+		# print(temp)
+		# TempScrollArea = QLabel(temp)
+		# # TempScrollArea.setWidgetResizable(True)
+		# TempScrollArea.setMinimumSize(QSize(200, 50))
+		# TempScrollArea.setMaximumSize(QSize(200, 50))
+		# TempScrollArea.setGeometry(150, 300, 0, 0)
+		# TempScrollArea.setAutoFillBackground(True)
+		# TempScrollArea.setAlignment(Qt.AlignCenter)
+		# TempScrollArea.setObjectName(ScrollAreaName)
+		# TempScrollArea.setAutoFillBackground(True)
+		# TempScrollArea.setText('Ready')
+		# ####################################
+		FileName = 'New Model'
 
-		# model = QStandardItemModel()
-		# for i in range(100):
-		# 	item = QStandardItem(str(i))
-		# 	item.setTextAlignment(Qt.AlignHCenter)
-		# 	model.appendRow(item)
-		# TempListView.setModel(model)
-		# TempListView.setFont(self.ItemFont)
-		# TempListView.setEditTriggers(QListView.NoEditTriggers)
-		# TempListView.dragEnterEvent = DropArea.dragEnterEvent
-		# TempListView.mouseMoveEvent = DropArea.mouseMoveEvent
-		# TempListView.dropEvent = DropArea.dropEvent
-		# TempListView.setAcceptDrops(True)
-		# TempListView.layout.setAlignment(Qt.AlignHCenter)
-		# TempListView.setAlignment(Qt.AlignHCenter)
+		temp = QWidget()
+		temp.setAcceptDrops(False)
+		self.tabWidget.addTab(temp, FileName)
+		self.TabList.append(FileName)
+		self.TabListO.append(temp)
+		# add widget
+		ScrollAreaName = FileName + '_SA'
+		ListViewName = FileName + '_LV'
+		Index = self.TabList.index(FileName)
+		# target item
+		self.tabWidget.widget(Index)
 
+		# add scroll area to new tab
+		print(temp)
+		TempListWidget = NewListWidget(temp)
+		# TempScrollArea.setWidgetResizable(True)
+		TempListWidget.setMinimumSize(QSize(481, 654))
+		TempListWidget.setMaximumSize(QSize(481, 654))
+		# TempListView.setGeometry(0,0,200,100)
+		TempListWidget.setObjectName(ScrollAreaName)
+		TempListWidget.setAutoFillBackground(True)
+		self.ListWidgetO.append(TempListWidget)
+		TempListWidget.setAcceptDrops(True)
+		TempListWidget.setDragDropMode(3)
+		TempListWidget.setDefaultDropAction(0)
+		TempListWidget.itemDoubleClicked.connect(self.RemoveItem)
+		TempListWidget.setFont(self.ItemFont)
+		# TempListWidget.setItemAlignment(Qt.AlignHCenter)
 
-		# add list view to scroll area
+		print(TempListWidget.acceptDrops())
 
-
-
-
-
+	def SetListLayer(self):
+		# Layers = ['Input', 'Conv1D', 'Conv2D', 'Conv3D', 'LSTM', 'Dense', 'RNN','Optimizer', 'Softmax', 'Output']
+		Layers = ['Conv1D', 'Conv2D', 'Conv3D', 'Dense']
+		for layer in Layers:
+			temp = QListWidgetItem(layer)
+			# temp.setIcon(QIcon('File/Image/' + layer + '.jpg'))
+			temp.setFont(self.ItemFont)
+			temp.setTextAlignment(Qt.AlignHCenter)
+			self.listWidget.addItem(temp)
+		self.listWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
+		self.listWidget.setDragEnabled(True)
 
 
 if __name__ == "__main__":
