@@ -1,21 +1,59 @@
 from PyQt5.QtGui import QPixmap, QDrag, QStandardItemModel, QStandardItem, QFont, QIcon, QCursor
 from PyQt5.QtWidgets import QApplication, QMainWindow, QFileSystemModel, QMessageBox, QWidget, QLabel, \
-	QTabWidget, QListView, QListWidget, QListWidgetItem, QAbstractItemView, QTableWidget,QTableWidgetItem, QHeaderView, QComboBox
+	QTabWidget, QListView, QListWidget, QLineEdit, QListWidgetItem, QAbstractItemView, QTableWidget,QTableWidgetItem, QHeaderView, QComboBox
 from PyQt5.QtCore import QDir, QCoreApplication, Qt, QMimeData, QSize, QModelIndex
 from MainForm import Ui_MainWindow
 import sys
 import Layers
+import os
 
 TempTarget = []
 
-class TrackableWidgetItem(QTableWidgetItem):
+class TrackableWidgetItem(QLineEdit):
 	PropertyFont = QFont('arial')
 	PropertyFont.setPointSize(10)
 
-	def __init__(self, ins=None):
+	def __init__(self, Name, Data, ins=None):
 		super(TrackableWidgetItem, self).__init__(ins)
 		self.setFont(self.PropertyFont)
-		self.setBackground(Qt.red)
+		self.setText('nA')
+		self.textChanged.connect(self.Changed)
+		self.Name = Name
+		self.Data = Data
+
+	def Changed(self):
+		global TempTarget
+		if self.Data.attributes[self.Name] == 'INT':
+			if not self.text().isnumeric():
+				A = QMessageBox.warning(self, 'Warning', 'Int only')
+				self.setText('0')
+				return
+			else:
+				self.Data.attributes[self.Name + '_value'] = self.text()
+				TempTarget = self.Data
+				ChangeUpdate(ui.tabWidget.currentWidget().focusWidget())
+		if self.Data.attributes[self.Name] == 'INT1':
+			print(self.text())
+			if self.text().isnumeric():
+				if int(self.text()) >= 100 or int(self.text()) < 1:
+					A = QMessageBox.warning(self, 'Warning', 'Int between 0 - 100')
+					self.setText('80')
+					return
+				else:
+					self.Data.attributes[self.Name + '_value'] = self.text()
+					TempTarget = self.Data
+					ChangeUpdate(ui.tabWidget.currentWidget().focusWidget())
+			else:
+				A = QMessageBox.warning(self, 'Warning', 'Int between 0 - 100')
+				self.setText('80')
+				return
+		if self.Data.attributes[self.Name] == 'NAME':
+			self.Data.attributes[self.Name + '_value'] = self.text()
+			TempTarget = self.Data
+			ChangeUpdate(ui.tabWidget.currentWidget().focusWidget())
+
+
+		print(self.Data.attributes[self.Name])
 		# Item Changed
 
 
@@ -41,11 +79,15 @@ class NewComboBox(QComboBox):
 		TempTarget = self.data
 		ChangeUpdate(ui.tabWidget.currentWidget().focusWidget())
 
+	def wheelEvent(self, QWheelEvent):
+		if self.hasFocus():
+			QComboBox.wheelEvent(QWheelEvent)
+
 
 class NewListWidget(QListWidget):
 	item_list = []
 
-	Factory = Layers.CDFactory()
+	Factory = Layers.LayerFactory()
 	PropertyFont = QFont('arial')
 	PropertyFont.setPointSize(10)
 
@@ -122,7 +164,7 @@ class NewListWidget(QListWidget):
 				ui.tableWidget.insertRow(RowCounter)
 				ui.tableWidget.setItem(RowCounter, 0 , tempItem)
 				tempItem = QTableWidgetItem(str(self.currentIndex().row() + 1))
-				tempItem.setTextAlignment(Qt.AlignCenter)
+				# tempItem.setTextAlignment(Qt.AlignCenter)
 				tempItem.setFont(self.PropertyFont)
 				tempItem.setFlags(Qt.ItemIsEnabled)
 				tempItem.setBackground(Qt.gray)
@@ -140,15 +182,20 @@ class NewListWidget(QListWidget):
 			ui.tableWidget.setItem(RowCounter, 0, NameItem)
 			if type(target.attributes[each]) == type([]):
 				comboBox = NewComboBox(target, each, IndexCounter)
+				comboBox.setFocusPolicy(Qt.StrongFocus)
 				ui.tableWidget.setCellWidget(RowCounter, 1, comboBox)
 				# comboBox.currentIndexChanged.connect(lambda: self.ChangeUpdate(RowCounter, targetValue))
 			else:
-				changeablewidget = TrackableWidgetItem('')
-				ui.tableWidget.setItem(RowCounter, 1, changeablewidget)
+				changeableWidget = TrackableWidgetItem(each, target)
+				changeableWidget.setText(str(target.attributes[each+'_value']))
+				ui.tableWidget.setCellWidget(RowCounter, 1, changeableWidget)
 
 				pass
 			RowCounter += 1
 			IndexCounter += 1
+
+	def focusWidget(self):
+		print(self)
 
 def ChangeUpdate(self):
 	print('changed')
@@ -177,6 +224,7 @@ class MainForm(Ui_MainWindow):
 		self.SetTreeWedgit()
 		self.SetTabWidegt()
 		self.SetListLayer()
+		self.pushButton_2.clicked.connect(self.GenerateModel)
 
 
 
@@ -266,7 +314,9 @@ class MainForm(Ui_MainWindow):
 		reply = QMessageBox.question(self.treeView, "Confirmation", "Do you really want to delete this layer?", QMessageBox.Yes | QMessageBox.No)
 		if reply == 16384:
 			parent = item.listWidget()
+			index = parent.row(item)
 			parent.takeItem(parent.row(item))
+			parent.item_list.pop(index)
 
 	def SetTabWidegt(self):
 		self.tabWidget.tabBarDoubleClicked.connect(self.tabWidgetDoubleClicked)
@@ -334,7 +384,7 @@ class MainForm(Ui_MainWindow):
 
 	def SetListLayer(self):
 		# Layers = ['Input', 'Conv1D', 'Conv2D', 'Conv3D', 'LSTM', 'Dense', 'RNN','Optimizer', 'Softmax', 'Output']
-		Layers = ['Conv1D', 'Conv2D', 'Conv3D', 'Dense']
+		Layers = ['Input', 'Conv', 'Pooling', 'Dense', 'Flatten', 'Compile']
 		for layer in Layers:
 			temp = QListWidgetItem(layer)
 			# temp.setIcon(QIcon('File/Image/' + layer + '.jpg'))
@@ -343,6 +393,74 @@ class MainForm(Ui_MainWindow):
 			self.listWidget.addItem(temp)
 		self.listWidget.setEditTriggers(QAbstractItemView.NoEditTriggers)
 		self.listWidget.setDragEnabled(True)
+
+
+	def GenerateModel(self):
+		try:
+			targets = ui.tabWidget.currentWidget().focusWidget().item_list
+		except:
+			A = QMessageBox.warning(ui.tabWidget, 'Warning', 'Model not complete')
+			return
+		if not self.ModelCheck(targets):
+			A = QMessageBox.warning(ui.tabWidget, 'Warning', 'Model Invalid')
+			return
+		FileName = targets[0].attributes['model_name_value']
+		if not self.ModelNameCheck(FileName):
+			return
+		self.GenKerasTF2(targets, FileName)
+
+
+	def GenKerasTF2(self, targets, FileName):
+		File = open(FileName, 'w')
+		File.write('# This script is generated by AMLGM2, support TF2.0 only\n')
+		File.write('import tensorflow as tf\n')
+		File.write('from tensorflow.keras import layers, models\n')
+		File.write('import numpy as np\n')
+		File.write('# Model starts here\n')
+		File.write('model = models.Sequential()\n')
+		Generator = Layers.InstructionFactory()
+		for index in range(1, len(targets)):
+			temp = targets[index]
+			statement = Generator.GenerateInstruction(temp, targets[0])
+			File.write(statement)
+
+
+
+		File.close()
+
+
+
+	def ModelNameCheck(self, FileName):
+		if FileName in os.listdir():
+			A = QMessageBox.warning(ui.tabWidget, 'Warning', 'File Existed, override?', QMessageBox.Yes | QMessageBox.No)
+			if A == 16384:
+				os.remove(FileName)
+				return True
+			else:
+				return False
+		return True
+
+
+
+
+
+	def ModelCheck(self, targets):
+		dangerlist = ['INPUT', 'COMPILE']
+		if len(targets) < 2:
+			return False
+		if targets[0].attributes['type'] != 'INPUT':
+			return False
+		if targets[len(targets)-1].attributes['type'] != 'COMPILE':
+			return False
+		for i in range(1, len(targets)-1):
+			if targets[i].attributes['type'] in dangerlist:
+				return False
+		return True
+
+
+
+
+
 
 
 if __name__ == "__main__":
