@@ -70,9 +70,9 @@ class InputLayer(object):
 		self.attributes['type'] = 'INPUT'
 		self.attributes['index'] = index
 		self.attributes['input_x_file'] = 'NAME'
-		self.attributes['input_x_file_value'] = ''
+		self.attributes['input_x_file_value'] = 'xtrain.npy'
 		self.attributes['input_y_file'] = 'NAME'
-		self.attributes['input_y_file_value'] = ''
+		self.attributes['input_y_file_value'] = 'ytrain.npy'
 		self.attributes['training_ratio'] = 'INT1'
 		self.attributes['training_ratio_value'] = 80
 		self.attributes['model_name'] = 'NAME'
@@ -202,11 +202,11 @@ class InstructionFactory(object):
 		elif type(temp) == type(Conv(999)):
 			matrix = self.MatrixGen(attributes['cnn_type_value']+1, attributes['kernel_size_value'])
 			statement = 'model.add(layers.{}({}, {}, activation=\'{}\''.format(attributes['cnn_type'][attributes['cnn_type_value']], attributes['filters_value'], matrix, attributes['activation'][(int(attributes['activation_value']))])
-			skiplist = ['type', 'index', 'units', 'activation', 'kernel_size', 'filters', 'cnn_type']
+			skiplist = ['type', 'index', 'units', 'activation', 'kernel_size', 'filters', 'cnn_type', 'pooling_type']
 			statement = self.PropertyManage(statement, temp, skiplist)
 			return statement
 		elif type(temp) == type(Pooling(999)):
-			skiplist = ['type', 'index', 'units', 'activation', 'pool_size']
+			skiplist = ['type', 'index', 'units', 'activation', 'pool_size', 'pooling_type']
 			matrix = self.MatrixGen((attributes['pooling_type_value'] + 1)%3, attributes['pool_size_value'])
 			statement = 'model.add(layers.{}({}'.format(attributes['pooling_type'][int(attributes['pooling_type_value'])], matrix)
 			statement = self.PropertyManage(statement, temp, skiplist)
@@ -215,8 +215,8 @@ class InstructionFactory(object):
 			statement = 'model.compile(optimizer=\'{}\', loss=\'{}\', metrics=[\'{}\'])\n'.format(attributes['optimizer'][int(attributes['optimizer_value'])],
 																				 attributes['loss'][int(attributes['loss_value'])],
 																				 attributes['metrics'][int(attributes['metrics_value'])])
-			statement += 'xtrain = np.load(temp0.attributes[\'input_x_file_value\'])\n'
-			statement += 'ytrain = np.load(temp0.attributes[\'input_y_file_value\'])\n'
+			statement += 'xtrain = np.load({})\n'.format(temp0.attributes['input_x_file_value'])
+			statement += 'ytrain = np.load({})\n'.format(temp0.attributes['input_y_file_value'])
 			statement += 'model.fit({}, {}, epochs={}, batch_size={})\n'.format('xtrain', 'ytrain', temp.attributes['epoch_value'], temp.attributes['batch_size_value'])
 			print(statement)
 			return statement
